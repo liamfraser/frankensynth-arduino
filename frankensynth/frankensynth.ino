@@ -34,15 +34,15 @@
 
 /* Constants: */
 // The pins that the scan matrix rows are connected to
-const int[] ROWS = {2, 3, 4, 5, 6, 7, 8, 9};
+const int ROWS[] = {2, 3, 4, 5, 6, 7, 8, 9};
 
 // Shift register (SN74HC595N) pins
-const int S_CLOCK = 11;
+const int S_CLOCK = 10;
 const int S_LATCH = 11;
 const int S_DATA  = 12;
 
 // Shift register bytes (bit 0 is unused for physical wiring convenience)
-const byte[] S_BYTES = { B00000010,
+const byte S_BYTES[] = { B00000010,
                          B00000100,
                          B00001000,
                          B00010000,
@@ -57,12 +57,15 @@ void setup() {
     pinMode(S_DATA, OUTPUT);
 
     // Set the scan matrix rows up
-    for (int pin = 0; pin < sizeof(ROWS); pin++) {
+    int pin;
+    for (pin = 0; pin < (sizeof(ROWS) / sizeof(int)); pin++) {
         pinMode(ROWS[pin], INPUT);
     }
 
     // Set the serial rate to 31,250 bits per second
-    Serial.begin(31250);
+    //Serial.begin(31250);
+    // Use a standard serial rate for testing
+    Serial.begin(9600);
 }
 
 void set_col(int col) {
@@ -78,21 +81,23 @@ void set_col(int col) {
 
 void loop() {
     // Go through each column
-    for (int col = 0; col < sizeof(S_BYTES); col++) {
+    int col;
+    for (col = 0; col < sizeof(S_BYTES); col++) {
         // Activate the appropriate column
         set_col(col);
 
         // Read each row and see a key has been pressed
-        for (int row = 0; row < sizeof(ROWS)); row++) {
+        int row;
+        for (row = 0; row < (sizeof(ROWS) / sizeof(int)); row++) {
             int value = digitalRead(ROWS[row]);
 
             // If the key is pressed
             if (value) {
-                Serial.write("Column: ");
-                Serial.write(col + 1);
-                Serial.write(" Row: ");
-                Serial.write(row + 1);
-                Serial.write(" has been pressed\n");
+                Serial.print("Column: ");
+                Serial.print(col);
+                Serial.print(" Row: ");
+                Serial.print(row);
+                Serial.print(" has been pressed\n");
             }
         }
     }
