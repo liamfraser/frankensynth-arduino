@@ -32,9 +32,68 @@
  * http://www.codetinkerhack.com/2012/11/how-to-turn-piano-toy-into-midi.html
  */
 
-void setup() {
+/* Constants: */
+// The pins that the scan matrix rows are connected to
+const int[] ROWS = {2, 3, 4, 5, 6, 7, 8, 9};
 
+// Shift register (SN74HC595N) pins
+const int S_CLOCK = 11;
+const int S_LATCH = 11;
+const int S_DATA  = 12;
+
+// Shift register bytes (bit 0 is unused for physical wiring convenience)
+const byte[] S_BYTES = { B00000010,
+                         B00000100,
+                         B00001000,
+                         B00010000,
+                         B00100000,
+                         B01000000,
+                         B10000000 };
+
+void setup() {
+    // Set shift register pins up
+    pinMode(S_CLOCK, OUTPUT);
+    pinMode(S_LATCH, OUTPUT);
+    pinMode(S_DATA, OUTPUT);
+
+    // Set the scan matrix rows up
+    for (int pin = 0; pin < sizeof(ROWS); pin++) {
+        pinMode(ROWS[pin], INPUT);
+    }
+
+    // Set the serial rate to 31,250 bits per second
+    Serial.begin(31250);
+}
+
+void set_col(int col) {
+    // Set the latch low so the output doesn't change while we're writing data
+    digitalWrite(S_LATCH, LOW);
+
+    // Write the appropriate 8 bytes with the most significant bit first
+    shiftOut(S_DATA, S_CLOCK, MSBFIRST, S_BYTES[col]);
+
+    // Set the latch high so the new data is displayed
+    digitalWrite(S_LATCH, HIGH);
 }
 
 void loop() {
+    // Go through each column
+    for (int col = 0; col < sizeof(S_BYTES); col++) {
+        // Activate the appropriate column
+        set_col(col);
+
+        // Read each row and see a key has been pressed
+        for (int row = 0; row < sizeof(ROWS)); row++) {
+            int value = digitalRead(ROWS[row]);
+
+            // If the key is pressed
+            if (value) {
+                Serial.write("Column: ");
+                Serial.write(col + 1);
+                Serial.write(" Row: ");
+                Serial.write(row + 1);
+                Serial.write(" has been pressed\n");
+            }
+        }
+    }
 }
