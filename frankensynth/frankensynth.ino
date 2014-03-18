@@ -118,7 +118,7 @@ void set_col(int col) {
 }
 
 void note_on(int col, int row) {
-    KEY_MAP[col][row] = 1;
+    KEY_STATE[col][row] = 1;
     // 0x90 turns the note on on channel 0
     Serial.write(0x90);
     Serial.write(KEY_MAP[col][row]);
@@ -126,7 +126,7 @@ void note_on(int col, int row) {
 }
 
 void note_off(int col, int row) {
-    KEY_MAP[col][row] = 0;
+    KEY_STATE[col][row] = 0;
     // 0x80 turns the note off on channel 0
     Serial.write(0x80);
     Serial.write(KEY_MAP[col][row]);
