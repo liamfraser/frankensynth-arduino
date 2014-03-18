@@ -66,9 +66,9 @@ int KEY_STATE[COL_C][ROW_C];
 // Map each column and row to a midi note value
 int KEY_MAP[COL_C][ROW_C];
 
-// The MIDI note number to start at when building the key map. 24 is the C
-// at the beginning of Octave 2.
-const int KEY_MAP_START = 24;
+// The MIDI note number to start at when building the key map. 36 is the C
+// at the beginning of Octave 3.
+const int KEY_MAP_START = 36;
 
 void setup() {
     // Initialise all key states to 0
