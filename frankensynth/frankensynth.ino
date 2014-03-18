@@ -101,9 +101,7 @@ void setup() {
     }
 
     // Set the serial rate to 31,250 bits per second
-    //Serial.begin(31250);
-    // Use a standard serial rate for testing
-    Serial.begin(9600);
+    Serial.begin(31250);
 }
 
 void set_col(int col) {
