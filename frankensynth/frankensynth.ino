@@ -35,13 +35,15 @@
 /* Constants: */
 // The pins that the scan matrix rows are connected to
 const int ROWS[] = {2, 3, 4, 5, 6, 7, 8, 9};
+const int ROW_C = sizeof(ROWS) / sizeof(int);
 
 // Shift register (SN74HC595N) pins
 const int S_CLOCK = 10;
 const int S_LATCH = 11;
 const int S_DATA  = 12;
 
-// Shift register bytes (bit 0 is unused for physical wiring convenience)
+// Shift register bytes that represent columns (bit 0 is unused for physical
+// wiring convenience)
 const byte S_BYTES[] = { B00000010,
                          B00000100,
                          B00001000,
@@ -49,6 +51,7 @@ const byte S_BYTES[] = { B00000010,
                          B00100000,
                          B01000000,
                          B10000000 };
+const int COL_C = sizeof(S_BYTES);
 
 void setup() {
     // Set shift register pins up
@@ -58,7 +61,7 @@ void setup() {
 
     // Set the scan matrix rows up
     int pin;
-    for (pin = 0; pin < (sizeof(ROWS) / sizeof(int)); pin++) {
+    for (pin = 0; pin < ROW_C; pin++) {
         pinMode(ROWS[pin], INPUT);
     }
 
@@ -82,22 +85,18 @@ void set_col(int col) {
 void loop() {
     // Go through each column
     int col;
-    for (col = 0; col < sizeof(S_BYTES); col++) {
+    for (col = 0; col < COL_C; col++) {
         // Activate the appropriate column
         set_col(col);
 
         // Read each row and see a key has been pressed
         int row;
-        for (row = 0; row < (sizeof(ROWS) / sizeof(int)); row++) {
+        for (row = 0; row < ROW_C; row++) {
             int value = digitalRead(ROWS[row]);
 
             // If the key is pressed
             if (value) {
-                Serial.print("Column: ");
-                Serial.print(col);
-                Serial.print(" Row: ");
-                Serial.print(row);
-                Serial.print(" has been pressed\n");
+            
             }
         }
     }
