@@ -32,7 +32,7 @@
  * http://www.codetinkerhack.com/2012/11/how-to-turn-piano-toy-into-midi.html
  *
  * You can find a table of MIDI commands here:
- * https://ccrma.stanford.edu/~craig/articles/linuxmidi/misc/essenmidi.html
+ * http://www.midi.org/techspecs/midimessages.php
  */
 
 /* Constants: */
@@ -69,6 +69,14 @@ int KEY_MAP[COL_C][ROW_C];
 // The MIDI note number to start at when building the key map. 36 is the C
 // at the beginning of Octave 3.
 const int KEY_MAP_START = 36;
+
+// The Analogue pin that the sustain pedal is connected to
+const int SUSTAIN = 0;
+
+// The voltage below which the sustain pedal is off, and above which the
+// sustain pedal is on. 0-5v is represented by 0-1023. This will depend on
+// pedal and how it works. I want my threshold as 2V. 2V / (5V / 1024) = 409
+const int SUSTAIN_THRESH = 409;
 
 void setup() {
     // Initialise all key states to 0
@@ -131,6 +139,24 @@ void note_off(int col, int row) {
     Serial.write(OFF_VELOCITY);
 }
 
+void sustain_on() {
+    // Channel 0 controller message
+    Serial.write(0xB0);
+    // Controller message type == sustain
+    Serial.write(0x40);
+    // Sustain value (≤63 off, ≥64 on)
+    Serial.write(127);
+}
+
+void sustain_off() {
+    // Channel 0 controller message
+    Serial.write(0xB0);
+    // Controller message type == sustain
+    Serial.write(0x40);
+    // Sustain value (≤63 off, ≥64 on)
+    Serial.write(0);
+}
+
 void loop() {
     // Go through each column
     int col;
@@ -154,5 +180,13 @@ void loop() {
                 }
             }
         }
+    }
+
+    // Finally, check the sustain pedal
+    int sustain_volts = analogRead(SUSTAIN);
+    if (sustain_volts < SUSTAIN_THRESH) {
+        sustain_off();
+    } else {
+        sustain_on();
     }
 }
