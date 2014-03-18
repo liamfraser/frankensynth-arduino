@@ -30,6 +30,9 @@
  *
  * Some parts of this code use ideas from:
  * http://www.codetinkerhack.com/2012/11/how-to-turn-piano-toy-into-midi.html
+ *
+ * You can find a table of MIDI commands here:
+ * https://ccrma.stanford.edu/~craig/articles/linuxmidi/misc/essenmidi.html
  */
 
 /* Constants: */
@@ -53,7 +56,39 @@ const byte S_BYTES[] = { B00000010,
                          B10000000 };
 const int COL_C = sizeof(S_BYTES);
 
+// The default key press / release velocity (it can range from 0 - 127)
+const int ON_VELOCITY = 64;
+const int OFF_VELOCITY = 64;
+
+// Keep track of which keys are pressed and depressed
+int KEY_STATE[COL_C][ROW_C];
+
+// Map each column and row to a midi note value
+int KEY_MAP[COL_C][ROW_C];
+
+// The MIDI note number to start at when building the key map. 24 is the C
+// at the beginning of Octave 2.
+const int KEY_MAP_START = 24;
+
 void setup() {
+    // Initialise all key states to 0
+    int col;
+    int row;
+    for (col = 0; col < COL_C; col++) {
+        for (row = 0; row < ROW_C; row++) {
+            KEY_STATE[col][row] = 0;
+        }
+    }
+
+    // Build the midi key map
+    int key = KEY_MAP_START;
+    for (col = 0; col < COL_C; col++) {
+        for (row = 0; row < ROW_C; row++) {
+            KEY_MAP[col][row] = key;
+            key++;
+        }
+    }
+
     // Set shift register pins up
     pinMode(S_CLOCK, OUTPUT);
     pinMode(S_LATCH, OUTPUT);
@@ -82,6 +117,22 @@ void set_col(int col) {
     digitalWrite(S_LATCH, HIGH);
 }
 
+void note_on(int col, int row) {
+    KEY_MAP[col][row] = 1;
+    // 0x90 turns the note on on channel 0
+    Serial.write(0x90);
+    Serial.write(KEY_MAP[col][row]);
+    Serial.write(ON_VELOCITY);
+}
+
+void note_off(int col, int row) {
+    KEY_MAP[col][row] = 0;
+    // 0x80 turns the note off on channel 0
+    Serial.write(0x80);
+    Serial.write(KEY_MAP[col][row]);
+    Serial.write(OFF_VELOCITY);
+}
+
 void loop() {
     // Go through each column
     int col;
@@ -89,14 +140,20 @@ void loop() {
         // Activate the appropriate column
         set_col(col);
 
-        // Read each row and see a key has been pressed
+        // Read each row and get the value
         int row;
         for (row = 0; row < ROW_C; row++) {
             int value = digitalRead(ROWS[row]);
 
-            // If the key is pressed
-            if (value) {
-            
+            // If the key state is different to the one we have in memory
+            if (value != KEY_STATE[col][row]) {
+                if (value == 1) {
+                    // Turn the note on
+                    note_on(col, row);
+                } else {
+                    // Turn the note off
+                    note_off(col, row);
+                }
             }
         }
     }
