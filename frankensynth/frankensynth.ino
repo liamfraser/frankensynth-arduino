@@ -84,7 +84,7 @@ const int SUSTAIN_THRESH = 409;
 
 // Pins for the two effect knobs followed by variables to track their state
 const int EFFECT_1_P = 4;
-const int EFFECT_2_P = 4;
+const int EFFECT_2_P = 3;
 int EFFECT_1 = 0;
 int EFFECT_2 = 0;
 int EFFECT_1_PREV = 0;
