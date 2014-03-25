@@ -75,7 +75,7 @@ byte KEY_MAP[COL_C][ROW_C];
 #define SUSTAIN_P 0
 
 // The sustain state
-boolean SUSTAIN = false;
+bool SUSTAIN = false;
 
 // The voltage below which the sustain pedal is off, and above which the
 // sustain pedal is on. 0-5v is represented by 0-1023. This will depend on
@@ -218,7 +218,7 @@ void loop() {
         // Read each row and get the value
         byte row;
         for (row = 0; row < ROW_C; row++) {
-            boolean value = digitalRead(ROWS[row]);
+            bool value = digitalRead(ROWS[row]);
 
             // If the key state is different to the one we have in memory
             if (value != KEY_STATE[col][row]) {
