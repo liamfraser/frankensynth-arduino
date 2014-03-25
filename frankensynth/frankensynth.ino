@@ -232,7 +232,7 @@ void loop() {
     }
 
     // Check the sustain pedal
-    int sustain_volts = analogRead(SUSTAIN);
+    int sustain_volts = analogRead(SUSTAIN_P);
     if (sustain_volts < SUSTAIN_THRESH) {
         if (SUSTAIN != 0) {
             sustain_off();
