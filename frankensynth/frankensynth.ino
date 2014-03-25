@@ -59,7 +59,7 @@ const int COL_C = sizeof(S_BYTES);
 const int VELOCITY = 0;
 
 // The pin that the velocity knob is connected to
-const int VELOCITY_P = 3;
+const int VELOCITY_P = 5;
 
 // Keep track of which keys are pressed and depressed
 int KEY_STATE[COL_C][ROW_C];
