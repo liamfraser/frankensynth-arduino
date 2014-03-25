@@ -55,7 +55,7 @@ const byte S_BYTES[] = { B00000010,
                          B10000000 };
 #define COL_C 7
 
-// The default key press / release velocity (it can range from 0 - 127)
+// The MIDI ON/OFF velocity. Set by a knob
 byte VELOCITY = 0;
 
 // The pin that the velocity knob is connected to
