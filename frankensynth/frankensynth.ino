@@ -56,7 +56,7 @@ const byte S_BYTES[] = { B00000010,
 const int COL_C = sizeof(S_BYTES);
 
 // The default key press / release velocity (it can range from 0 - 127)
-const int VELOCITY = 0;
+int VELOCITY = 0;
 
 // The pin that the velocity knob is connected to
 const int VELOCITY_P = 5;
@@ -72,16 +72,23 @@ int KEY_MAP[COL_C][ROW_C];
 const int KEY_MAP_START = 36;
 
 // The Analogue pin that the sustain pedal is connected to
-const int SUSTAIN = 0;
+const int SUSTAIN_P = 0;
 
 // The sustain state
-const int SUSTAIN_STATE = 0;
+int SUSTAIN = 0;
 
 // The voltage below which the sustain pedal is off, and above which the
 // sustain pedal is on. 0-5v is represented by 0-1023. This will depend on
 // pedal and how it works. I want my threshold as 2V. 2V / (5V / 1024) = 409
 const int SUSTAIN_THRESH = 409;
 
+// Pins for the two effect knobs followed by variables to track their state
+const int EFFECT_1_P = 4;
+const int EFFECT_2_P = 4;
+int EFFECT_1 = 0;
+int EFFECT_2 = 0;
+int EFFECT_1_PREV = 0;
+int EFFECT_2_PREV = 0;
 
 void setup() {
     // Initialise all key states to 0
@@ -162,6 +169,23 @@ void sustain_off() {
     Serial.write(0);
 }
 
+void effect_change(int effect_num) {
+    // Channel 0 controller message
+    Serial.write(0xB0);
+
+    if (effect_num == 1) {
+        // Message type == Effect Control 1
+        Serial.write(0x0C);
+        // Effect value
+        Serial.write(EFFECT_1);
+    } else {
+        // Message type == Effect Control 2
+        Serial.write(0x0D);
+        // Effect value
+        Serial.write(EFFECT_2);
+    }
+}
+
 int volt_to_midi(int volts) {
     // Convert a voltage from 0-1023 (0-5V) to a MIDI value of 0-127
     // 1024 / 128 = 8, so divide voltage by 8 and return
@@ -171,6 +195,17 @@ int volt_to_midi(int volts) {
 void loop() {
     // Set the velocity according to the velocity knob
     VELOCITY = volt_to_midi(analogRead(VELOCITY_P));
+
+    // Deal with the two effect knobs
+    EFFECT_1 = volt_to_midi(analogRead(EFFECT_1_P));
+    EFFECT_1 = volt_to_midi(analogRead(EFFECT_2_P));
+
+    if (EFFECT_1 != EFFECT_1_OLD) {
+        effect_change(1);
+    }
+    if (EFFECT_2 != EFFECT_2_OLD) {
+        effect_change(2);
+    }
 
     // Go through each column
     int col;
@@ -199,11 +234,11 @@ void loop() {
     // Check the sustain pedal
     int sustain_volts = analogRead(SUSTAIN);
     if (sustain_volts < SUSTAIN_THRESH) {
-        if (SUSTAIN_STATE != 0) {
+        if (SUSTAIN != 0) {
             sustain_off();
         }
     } else {
-        if (SUSTAIN_STATE != 1) {
+        if (SUSTAIN != 1) {
             sustain_on();
         }
     }
