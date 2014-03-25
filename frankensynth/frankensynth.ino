@@ -72,6 +72,9 @@ const int KEY_MAP_START = 36;
 // The Analogue pin that the sustain pedal is connected to
 const int SUSTAIN = 0;
 
+// The sustain state
+const int SUSTAIN_STATE = 0;
+
 // The voltage below which the sustain pedal is off, and above which the
 // sustain pedal is on. 0-5v is represented by 0-1023. This will depend on
 // pedal and how it works. I want my threshold as 2V. 2V / (5V / 1024) = 409
@@ -181,11 +184,15 @@ void loop() {
         }
     }
 
-    // Finally, check the sustain pedal
+    // Check the sustain pedal
     int sustain_volts = analogRead(SUSTAIN);
     if (sustain_volts < SUSTAIN_THRESH) {
-        //sustain_off();
+        if (SUSTAIN_STATE != 0) {
+            sustain_off();
+        }
     } else {
-        //sustain_on();
+        if (SUSTAIN_STATE != 1) {
+            sustain_on();
+        }
     }
 }
