@@ -200,10 +200,10 @@ void loop() {
     EFFECT_1 = volt_to_midi(analogRead(EFFECT_1_P));
     EFFECT_1 = volt_to_midi(analogRead(EFFECT_2_P));
 
-    if (EFFECT_1 != EFFECT_1_OLD) {
+    if (EFFECT_1 != EFFECT_1_PREV) {
         effect_change(1);
     }
-    if (EFFECT_2 != EFFECT_2_OLD) {
+    if (EFFECT_2 != EFFECT_2_PREV) {
         effect_change(2);
     }
 
