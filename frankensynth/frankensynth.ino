@@ -37,12 +37,12 @@
 
 // The pins that the scan matrix rows are connected to
 const int ROWS[] = {2, 3, 4, 5, 6, 7, 8, 9};
-const int ROW_C = sizeof(ROWS) / sizeof(int);
+#define ROW_C 8
 
 // Shift register (SN74HC595N) pins
-const int S_CLOCK = 10;
-const int S_LATCH = 11;
-const int S_DATA  = 12;
+#define S_CLOCK 10
+#define S_LATCH 11
+#define S_DATA  12
 
 // Shift register bytes that represent columns (bit 0 is unused for physical
 // wiring convenience)
@@ -53,55 +53,55 @@ const byte S_BYTES[] = { B00000010,
                          B00100000,
                          B01000000,
                          B10000000 };
-const int COL_C = sizeof(S_BYTES);
+#define COL_C 7
 
 // The default key press / release velocity (it can range from 0 - 127)
-int VELOCITY = 0;
+byte VELOCITY = 0;
 
 // The pin that the velocity knob is connected to
-const int VELOCITY_P = 5;
+#define VELOCITY_P 5
 
 // Keep track of which keys are pressed and depressed
-int KEY_STATE[COL_C][ROW_C];
+bool KEY_STATE[COL_C][ROW_C];
 
 // Map each column and row to a midi note value
-int KEY_MAP[COL_C][ROW_C];
+byte KEY_MAP[COL_C][ROW_C];
 
 // The MIDI note number to start at when building the key map. 36 is the C
 // at the beginning of Octave 3.
-const int KEY_MAP_START = 36;
+#define KEY_MAP_START 36
 
 // The Analogue pin that the sustain pedal is connected to
-const int SUSTAIN_P = 0;
+#define SUSTAIN_P 0
 
 // The sustain state
-int SUSTAIN = 0;
+boolean SUSTAIN = false;
 
 // The voltage below which the sustain pedal is off, and above which the
 // sustain pedal is on. 0-5v is represented by 0-1023. This will depend on
 // pedal and how it works. I want my threshold as 2V. 2V / (5V / 1024) = 409
-const int SUSTAIN_THRESH = 409;
+#define SUSTAIN_THRESH 409
 
 // Pins for the two effect knobs followed by variables to track their state
-const int EFFECT_1_P = 4;
-const int EFFECT_2_P = 3;
-int EFFECT_1 = 0;
-int EFFECT_2 = 0;
-int EFFECT_1_PREV = 0;
-int EFFECT_2_PREV = 0;
+#define EFFECT_1_P 4
+#define EFFECT_2_P 3
+byte EFFECT_1 = 0;
+byte EFFECT_2 = 0;
+byte EFFECT_1_PREV = 0;
+byte EFFECT_2_PREV = 0;
 
 void setup() {
     // Initialise all key states to 0
-    int col;
-    int row;
+    byte col;
+    byte row;
     for (col = 0; col < COL_C; col++) {
         for (row = 0; row < ROW_C; row++) {
-            KEY_STATE[col][row] = 0;
+            KEY_STATE[col][row] = false;
         }
     }
 
     // Build the midi key map
-    int key = KEY_MAP_START;
+    byte key = KEY_MAP_START;
     for (col = 0; col < COL_C; col++) {
         for (row = 0; row < ROW_C; row++) {
             KEY_MAP[col][row] = key;
@@ -115,7 +115,7 @@ void setup() {
     pinMode(S_DATA, OUTPUT);
 
     // Set the scan matrix rows up
-    int pin;
+    byte pin;
     for (pin = 0; pin < ROW_C; pin++) {
         pinMode(ROWS[pin], INPUT);
     }
@@ -124,7 +124,7 @@ void setup() {
     Serial.begin(31250);
 }
 
-void set_col(int col) {
+void set_col(byte col) {
     // Set the latch low so the output doesn't change while we're writing data
     digitalWrite(S_LATCH, LOW);
 
@@ -135,16 +135,16 @@ void set_col(int col) {
     digitalWrite(S_LATCH, HIGH);
 }
 
-void note_on(int col, int row) {
-    KEY_STATE[col][row] = 1;
+void note_on(byte col, byte row) {
+    KEY_STATE[col][row] = true;
     // 0x90 turns the note on on channel 1
     Serial.write(0x90);
     Serial.write(KEY_MAP[col][row]);
     Serial.write(VELOCITY);
 }
 
-void note_off(int col, int row) {
-    KEY_STATE[col][row] = 0;
+void note_off(byte col, byte row) {
+    KEY_STATE[col][row] = false;
     // 0x80 turns the note off on channel 1
     Serial.write(0x80);
     Serial.write(KEY_MAP[col][row]);
@@ -169,7 +169,7 @@ void sustain_off() {
     Serial.write(0);
 }
 
-void effect_change(int effect_num) {
+void effect_change(byte effect_num) {
     // Channel 0 controller message
     Serial.write(0xB0);
 
@@ -186,7 +186,7 @@ void effect_change(int effect_num) {
     }
 }
 
-int volt_to_midi(int volts) {
+byte volt_to_midi(short volts) {
     // Convert a voltage from 0-1023 (0-5V) to a MIDI value of 0-127
     // 1024 / 128 = 8, so divide voltage by 8 and return
     return volts / 8;
@@ -210,19 +210,19 @@ void loop() {
     }
 
     // Go through each column
-    int col;
+    byte col;
     for (col = 0; col < COL_C; col++) {
         // Activate the appropriate column
         set_col(col);
 
         // Read each row and get the value
-        int row;
+        byte row;
         for (row = 0; row < ROW_C; row++) {
-            int value = digitalRead(ROWS[row]);
+            boolean value = digitalRead(ROWS[row]);
 
             // If the key state is different to the one we have in memory
             if (value != KEY_STATE[col][row]) {
-                if (value == 1) {
+                if (value) {
                     // Turn the note on
                     note_on(col, row);
                 } else {
@@ -234,15 +234,15 @@ void loop() {
     }
 
     // Check the sustain pedal
-    int sustain_volts = analogRead(SUSTAIN_P);
+    short sustain_volts = analogRead(SUSTAIN_P);
     if (sustain_volts < SUSTAIN_THRESH) {
-        if (SUSTAIN != 0) {
-            SUSTAIN = 0;
+        if (SUSTAIN) {
+            SUSTAIN = false;
             sustain_off();
         }
     } else {
-        if (SUSTAIN != 1) {
-            SUSTAIN = 1;
+        if (!SUSTAIN) {
+            SUSTAIN = true;
             sustain_on();
         }
     }
