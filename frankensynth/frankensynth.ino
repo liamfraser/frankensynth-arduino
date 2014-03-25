@@ -35,7 +35,6 @@
  * http://www.midi.org/techspecs/midimessages.php
  */
 
-/* Constants: */
 // The pins that the scan matrix rows are connected to
 const int ROWS[] = {2, 3, 4, 5, 6, 7, 8, 9};
 const int ROW_C = sizeof(ROWS) / sizeof(int);
@@ -125,7 +124,7 @@ void set_col(int col) {
 
 void note_on(int col, int row) {
     KEY_STATE[col][row] = 1;
-    // 0x90 turns the note on on channel 0
+    // 0x90 turns the note on on channel 1
     Serial.write(0x90);
     Serial.write(KEY_MAP[col][row]);
     Serial.write(ON_VELOCITY);
@@ -133,7 +132,7 @@ void note_on(int col, int row) {
 
 void note_off(int col, int row) {
     KEY_STATE[col][row] = 0;
-    // 0x80 turns the note off on channel 0
+    // 0x80 turns the note off on channel 1
     Serial.write(0x80);
     Serial.write(KEY_MAP[col][row]);
     Serial.write(OFF_VELOCITY);
@@ -185,8 +184,8 @@ void loop() {
     // Finally, check the sustain pedal
     int sustain_volts = analogRead(SUSTAIN);
     if (sustain_volts < SUSTAIN_THRESH) {
-        sustain_off();
+        //sustain_off();
     } else {
-        sustain_on();
+        //sustain_on();
     }
 }
