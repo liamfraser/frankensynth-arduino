@@ -198,12 +198,14 @@ void loop() {
 
     // Deal with the two effect knobs
     EFFECT_1 = volt_to_midi(analogRead(EFFECT_1_P));
-    EFFECT_1 = volt_to_midi(analogRead(EFFECT_2_P));
+    EFFECT_2 = volt_to_midi(analogRead(EFFECT_2_P));
 
     if (EFFECT_1 != EFFECT_1_PREV) {
+        EFFECT_1_PREV = EFFECT_1;
         effect_change(1);
     }
     if (EFFECT_2 != EFFECT_2_PREV) {
+        EFFECT_2_PREV = EFFECT_2;
         effect_change(2);
     }
 
