@@ -235,10 +235,12 @@ void loop() {
     int sustain_volts = analogRead(SUSTAIN_P);
     if (sustain_volts < SUSTAIN_THRESH) {
         if (SUSTAIN != 0) {
+            SUSTAIN = 0;
             sustain_off();
         }
     } else {
         if (SUSTAIN != 1) {
+            SUSTAIN = 1;
             sustain_on();
         }
     }
