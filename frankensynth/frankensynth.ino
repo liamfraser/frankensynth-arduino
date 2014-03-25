@@ -56,8 +56,10 @@ const byte S_BYTES[] = { B00000010,
 const int COL_C = sizeof(S_BYTES);
 
 // The default key press / release velocity (it can range from 0 - 127)
-const int ON_VELOCITY = 64;
-const int OFF_VELOCITY = 64;
+const int VELOCITY = 0;
+
+// The pin that the velocity knob is connected to
+const int VELOCITY_P = 3;
 
 // Keep track of which keys are pressed and depressed
 int KEY_STATE[COL_C][ROW_C];
@@ -79,6 +81,7 @@ const int SUSTAIN_STATE = 0;
 // sustain pedal is on. 0-5v is represented by 0-1023. This will depend on
 // pedal and how it works. I want my threshold as 2V. 2V / (5V / 1024) = 409
 const int SUSTAIN_THRESH = 409;
+
 
 void setup() {
     // Initialise all key states to 0
@@ -130,7 +133,7 @@ void note_on(int col, int row) {
     // 0x90 turns the note on on channel 1
     Serial.write(0x90);
     Serial.write(KEY_MAP[col][row]);
-    Serial.write(ON_VELOCITY);
+    Serial.write(VELOCITY);
 }
 
 void note_off(int col, int row) {
@@ -138,7 +141,7 @@ void note_off(int col, int row) {
     // 0x80 turns the note off on channel 1
     Serial.write(0x80);
     Serial.write(KEY_MAP[col][row]);
-    Serial.write(OFF_VELOCITY);
+    Serial.write(VELOCITY);
 }
 
 void sustain_on() {
@@ -159,7 +162,16 @@ void sustain_off() {
     Serial.write(0);
 }
 
+int volt_to_midi(int volts) {
+    // Convert a voltage from 0-1023 (0-5V) to a MIDI value of 0-127
+    // 1024 / 128 = 8, so divide voltage by 8 and return
+    return volts / 8;
+}
+
 void loop() {
+    // Set the velocity according to the velocity knob
+    VELOCITY = volt_to_midi(analogRead(VELOCITY_P));
+
     // Go through each column
     int col;
     for (col = 0; col < COL_C; col++) {
@@ -195,4 +207,5 @@ void loop() {
             sustain_on();
         }
     }
+
 }
