@@ -90,8 +90,35 @@ byte EFFECT_2 = 0;
 byte EFFECT_1_PREV = 0;
 byte EFFECT_2_PREV = 0;
 
-void setup() {
-    // Initialise all key states to 0
+// The analogue pins that the octave rotary switches are connected to via a
+// resistor ladder
+#define LEFT_OCTAVE_P 1
+#define RIGHT_OCTAVE_P 2
+
+// The voltage thresholds for the rotary switch positions. Will be compared in
+// a if volts > RST_1, else if volts > RST_2 and so on. Resistors are 1 = 1k,
+// to 6 = 47k
+#define RST_6 102 // 0.5v
+#define RST_5 204 // 1v
+#define RST_4 409 // 2v
+#define RST_3 614 // 3v
+#define RST_2 798 // 3.9v
+#define RST_1 880 // 4.3v
+
+// Rotary switch pitch state (-3, 0, +2) will be -3 octaves, normal, +2 octaves
+short LEFT_OCTAVE = 0;
+short RIGHT_OCTAVE = 0;
+short LEFT_OCTAVE_PREV = 0;
+short RIGHT_OCTAVE_PREV = 0;
+
+// The keyboard will be split into a left and right for octave purposes.
+// Define the key that this happens at in terms of rows and columns. I'm using
+// middle C and including that in the right octave. Middle C is key 25 which is
+// column 4 and row 1, but we use zero based indexes in the loop
+#define OCTAVE_SPLIT_ROW 0
+#define OCTAVE_SPLIT_COL 3
+
+void reset_key_state() {
     byte col;
     byte row;
     for (col = 0; col < COL_C; col++) {
@@ -99,6 +126,11 @@ void setup() {
             KEY_STATE[col][row] = false;
         }
     }
+}
+
+void setup() {
+    // Initialise all key states to 0
+    reset_key_state();
 
     // Build the midi key map
     byte key = KEY_MAP_START;
@@ -135,19 +167,19 @@ void set_col(byte col) {
     digitalWrite(S_LATCH, HIGH);
 }
 
-void note_on(byte col, byte row) {
+void note_on(short note) {
     KEY_STATE[col][row] = true;
     // 0x90 turns the note on on channel 1
     Serial.write(0x90);
-    Serial.write(KEY_MAP[col][row]);
+    Serial.write(note);
     Serial.write(VELOCITY);
 }
 
-void note_off(byte col, byte row) {
+void note_off(short note) {
     KEY_STATE[col][row] = false;
     // 0x80 turns the note off on channel 1
     Serial.write(0x80);
-    Serial.write(KEY_MAP[col][row]);
+    Serial.write(note);
     Serial.write(VELOCITY);
 }
 
@@ -192,6 +224,24 @@ byte volt_to_midi(short volts) {
     return volts / 8;
 }
 
+short rotary_to_octave(short volts) {
+    // Returns the number of midi notes to take away or add on depending on
+    // the position of a rotary switch
+    if (volts > RST_1) {
+        return -36;
+    } else if (volts > RST_2) {
+        return -24;
+    } else if (volts > RST_3) {
+        return -12;
+    } else if (volts > RST_4) {
+        return 0;
+    } else if (volts > RST_5) {
+        return 12;
+    } else {
+        return 24;
+    }
+}
+
 void loop() {
     // Set the velocity according to the velocity knob
     VELOCITY = volt_to_midi(analogRead(VELOCITY_P));
@@ -209,6 +259,28 @@ void loop() {
         effect_change(2);
     }
 
+    // Read in the rotary switches to put out notes at the desired octaves
+    LEFT_OCTAVE = rotary_to_octave(analogRead(LEFT_OCTAVE_P));
+    RIGHT_OCTAVE = rotary_to_octave(analogRead(RIGHT_OCTAVE_P));
+
+    // If either of the octaves have changed, turn off every note to avoid
+    // the possibility of never turning a note off
+    if ((LEFT_OCTAVE != LEFT_OCTAVE_PREV) ||
+        (RIGHT_OCTAVE != RIGHT_OCTAVE_PREV)) {
+        byte note;
+        for (note = 0; note < 128; note++) {
+            note_off(note);
+        }
+
+        // Reset the key states too
+        reset_key_state();
+    }
+
+
+    // We've dealt with the octaves now, so update the prev values
+    LEFT_OCTAVE_PREV = LEFT_OCTAVE;
+    RIGHT_OCTAVE_PREV = RIGHT_OCTAVE;
+
     // Go through each column
     byte col;
     for (col = 0; col < COL_C; col++) {
@@ -222,12 +294,23 @@ void loop() {
 
             // If the key state is different to the one we have in memory
             if (value != KEY_STATE[col][row]) {
+                // Set the note according to the octave knobs
+                short note;
+
+                if ((col >= OCTAVE_SPLIT_COL) && (row >= OCTAVE_SPLIT_ROW)) {
+                    // Right side
+                    note = KEY_MAP[col][row] + RIGHT_OCTAVE;
+                } else {
+                    // Left side
+                    note = KEY_MAP[col][row] + LEFT_OCTAVE;
+                }
+
                 if (value) {
                     // Turn the note on
-                    note_on(col, row);
+                    note_on(note);
                 } else {
                     // Turn the note off
-                    note_off(col, row);
+                    note_off(note);
                 }
             }
         }
