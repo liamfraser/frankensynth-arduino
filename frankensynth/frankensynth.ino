@@ -134,6 +134,8 @@ void setup() {
 
     // Build the midi key map
     byte key = KEY_MAP_START;
+    byte col;
+    byte row;
     for (col = 0; col < COL_C; col++) {
         for (row = 0; row < ROW_C; row++) {
             KEY_MAP[col][row] = key;
@@ -168,7 +170,6 @@ void set_col(byte col) {
 }
 
 void note_on(short note) {
-    KEY_STATE[col][row] = true;
     // 0x90 turns the note on on channel 1
     Serial.write(0x90);
     Serial.write(note);
@@ -176,7 +177,6 @@ void note_on(short note) {
 }
 
 void note_off(short note) {
-    KEY_STATE[col][row] = false;
     // 0x80 turns the note off on channel 1
     Serial.write(0x80);
     Serial.write(note);
@@ -307,9 +307,11 @@ void loop() {
 
                 if (value) {
                     // Turn the note on
+                    KEY_STATE[col][row] = true;
                     note_on(note);
                 } else {
                     // Turn the note off
+                    KEY_STATE[col][row] = false;
                     note_off(note);
                 }
             }
