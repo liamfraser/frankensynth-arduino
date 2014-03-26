@@ -36,7 +36,7 @@
  */
 
 // The pins that the scan matrix rows are connected to
-const int ROWS[] = {2, 3, 4, 5, 6, 7, 8, 9};
+const uint8_t ROWS[] = {2, 3, 4, 5, 6, 7, 8, 9};
 #define ROW_C 8
 
 // Shift register (SN74HC595N) pins
@@ -56,7 +56,7 @@ const byte S_BYTES[] = { B00000010,
 #define COL_C 7
 
 // The MIDI ON/OFF velocity. Set by a knob
-byte VELOCITY = 0;
+uint8_t VELOCITY = 0;
 
 // The pin that the velocity knob is connected to
 #define VELOCITY_P 5
@@ -65,7 +65,7 @@ byte VELOCITY = 0;
 bool KEY_STATE[COL_C][ROW_C];
 
 // Map each column and row to a midi note value
-byte KEY_MAP[COL_C][ROW_C];
+uint8_t KEY_MAP[COL_C][ROW_C];
 
 // The MIDI note number to start at when building the key map. 36 is the C
 // at the beginning of Octave 3.
@@ -85,10 +85,10 @@ bool SUSTAIN = false;
 // Pins for the two effect knobs followed by variables to track their state
 #define EFFECT_1_P 4
 #define EFFECT_2_P 3
-byte EFFECT_1 = 0;
-byte EFFECT_2 = 0;
-byte EFFECT_1_PREV = 0;
-byte EFFECT_2_PREV = 0;
+uint8_t EFFECT_1 = 0;
+uint8_t EFFECT_2 = 0;
+uint8_t EFFECT_1_PREV = 0;
+uint8_t EFFECT_2_PREV = 0;
 
 // The analogue pins that the octave rotary switches are connected to via a
 // resistor ladder
@@ -106,10 +106,10 @@ byte EFFECT_2_PREV = 0;
 #define RST_1 880 // 4.3v
 
 // Rotary switch pitch state (-3, 0, +2) will be -3 octaves, normal, +2 octaves
-short LEFT_OCTAVE = 0;
-short RIGHT_OCTAVE = 0;
-short LEFT_OCTAVE_PREV = 0;
-short RIGHT_OCTAVE_PREV = 0;
+int8_t LEFT_OCTAVE = 0;
+int8_t RIGHT_OCTAVE = 0;
+int8_t LEFT_OCTAVE_PREV = 0;
+int8_t RIGHT_OCTAVE_PREV = 0;
 
 // The keyboard will be split into a left and right for octave purposes.
 // Define the key that this happens at in terms of rows and columns. I'm using
@@ -119,8 +119,8 @@ short RIGHT_OCTAVE_PREV = 0;
 #define OCTAVE_SPLIT_COL 3
 
 void reset_key_state() {
-    byte col;
-    byte row;
+    uint8_t col;
+    uint8_t row;
     for (col = 0; col < COL_C; col++) {
         for (row = 0; row < ROW_C; row++) {
             KEY_STATE[col][row] = false;
@@ -133,9 +133,9 @@ void setup() {
     reset_key_state();
 
     // Build the midi key map
-    byte key = KEY_MAP_START;
-    byte col;
-    byte row;
+    uint8_t key = KEY_MAP_START;
+    uint8_t col;
+    uint8_t row;
     for (col = 0; col < COL_C; col++) {
         for (row = 0; row < ROW_C; row++) {
             KEY_MAP[col][row] = key;
@@ -149,7 +149,7 @@ void setup() {
     pinMode(S_DATA, OUTPUT);
 
     // Set the scan matrix rows up
-    byte pin;
+    uint8_t pin;
     for (pin = 0; pin < ROW_C; pin++) {
         pinMode(ROWS[pin], INPUT);
     }
@@ -158,11 +158,11 @@ void setup() {
     Serial.begin(31250);
 }
 
-void set_col(byte col) {
+void set_col(uint8_t col) {
     // Set the latch low so the output doesn't change while we're writing data
     digitalWrite(S_LATCH, LOW);
 
-    // Write the appropriate 8 bytes with the most significant bit first
+    // Write the appropriate 8 uint8_ts with the most significant bit first
     shiftOut(S_DATA, S_CLOCK, MSBFIRST, S_BYTES[col]);
 
     // Set the latch high so the new data is displayed
@@ -201,7 +201,7 @@ void sustain_off() {
     Serial.write(0);
 }
 
-void effect_change(byte effect_num) {
+void effect_change(uint8_t effect_num) {
     // Channel 0 controller message
     Serial.write(0xB0);
 
@@ -218,7 +218,7 @@ void effect_change(byte effect_num) {
     }
 }
 
-byte volt_to_midi(short volts) {
+uint8_t volt_to_midi(short volts) {
     // Convert a voltage from 0-1023 (0-5V) to a MIDI value of 0-127
     // 1024 / 128 = 8, so divide voltage by 8 and return
     return volts / 8;
@@ -267,7 +267,7 @@ void loop() {
     // the possibility of never turning a note off
     if ((LEFT_OCTAVE != LEFT_OCTAVE_PREV) ||
         (RIGHT_OCTAVE != RIGHT_OCTAVE_PREV)) {
-        byte note;
+        uint8_t note;
         for (note = 0; note < 128; note++) {
             note_off(note);
         }
@@ -282,13 +282,13 @@ void loop() {
     RIGHT_OCTAVE_PREV = RIGHT_OCTAVE;
 
     // Go through each column
-    byte col;
+    uint8_t col;
     for (col = 0; col < COL_C; col++) {
         // Activate the appropriate column
         set_col(col);
 
         // Read each row and get the value
-        byte row;
+        uint8_t row;
         for (row = 0; row < ROW_C; row++) {
             bool value = digitalRead(ROWS[row]);
 
